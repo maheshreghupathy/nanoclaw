@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityEvent,
+  ChatMessage,
   RegisteredGroup,
   ScheduledTask,
   Status,
   fetchActivity,
   fetchGroups,
+  fetchMessages,
   fetchStatus,
   fetchTasks,
   subscribeEvents,
@@ -141,6 +143,46 @@ function SwarmPanel({ status }: { status: Status | null }) {
   );
 }
 
+function MessagesPanel({ messages }: { messages: ChatMessage[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  function formatTime(ts: string): string {
+    try {
+      return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return ts;
+    }
+  }
+
+  const isAndy = (m: ChatMessage) => m.is_bot_message === 1 || m.is_from_me === 1;
+
+  return (
+    <section className={styles.messagesPanel}>
+      <h2 className={styles.panelTitle}>Messages <span className={styles.liveDot}>●</span></h2>
+      <div className={styles.messagesFeed}>
+        {messages.length === 0 && <p className={styles.empty}>No messages yet</p>}
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`${styles.bubble} ${isAndy(m) ? styles.bubbleAndy : styles.bubbleUser}`}
+          >
+            <div className={styles.bubbleMeta}>
+              <span className={styles.bubbleSender}>{isAndy(m) ? '🤖 Andy' : `👤 ${m.sender_name}`}</span>
+              <span className={styles.bubbleTime}>{formatTime(m.timestamp)}</span>
+            </div>
+            <div className={styles.bubbleContent}>{m.content}</div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+    </section>
+  );
+}
+
 function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -172,6 +214,7 @@ export default function App() {
   const [groups, setGroups] = useState<Record<string, RegisteredGroup> | null>(null);
   const [tasks, setTasks] = useState<ScheduledTask[] | null>(null);
   const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Initial fetch
   useEffect(() => {
@@ -179,15 +222,17 @@ export default function App() {
     fetchGroups().then(setGroups).catch(() => {});
     fetchTasks().then(setTasks).catch(() => {});
     fetchActivity().then(setEvents).catch(() => {});
+    fetchMessages().then(setMessages).catch(() => {});
   }, []);
 
-  // Poll status + tasks every 5s
+  // Poll status + tasks + messages every 3s
   useEffect(() => {
     const id = setInterval(() => {
       fetchStatus().then(setStatus).catch(() => {});
       fetchTasks().then(setTasks).catch(() => {});
       fetchGroups().then(setGroups).catch(() => {});
-    }, 5000);
+      fetchMessages().then(setMessages).catch(() => {});
+    }, 3000);
     return () => clearInterval(id);
   }, []);
 
@@ -208,6 +253,7 @@ export default function App() {
           <TasksPanel tasks={tasks} />
           <SwarmPanel status={status} />
         </div>
+        <MessagesPanel messages={messages} />
         <ActivityFeed events={events} />
       </main>
     </div>

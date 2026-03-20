@@ -338,6 +338,28 @@ export function getNewMessages(
   return { messages: rows, newTimestamp };
 }
 
+export interface RecentMessage {
+  id: string;
+  chat_jid: string;
+  sender_name: string;
+  content: string;
+  timestamp: string;
+  is_from_me: number;
+  is_bot_message: number;
+}
+
+export function getRecentMessages(limit = 100): RecentMessage[] {
+  return db
+    .prepare(
+      `SELECT id, chat_jid, sender_name, content, timestamp, is_from_me, is_bot_message
+       FROM messages
+       WHERE content != '' AND content IS NOT NULL
+       ORDER BY timestamp DESC
+       LIMIT ?`,
+    )
+    .all(limit) as RecentMessage[];
+}
+
 export function getMessagesSince(
   chatJid: string,
   sinceTimestamp: string,

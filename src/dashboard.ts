@@ -2,7 +2,7 @@ import fs from 'fs';
 import http from 'http';
 import path from 'path';
 
-import { getAllChats, getAllRegisteredGroups, getAllTasks } from './db.js';
+import { getAllChats, getAllRegisteredGroups, getAllTasks, getRecentMessages } from './db.js';
 import { logger } from './logger.js';
 
 const LOG_PATH = path.resolve(process.cwd(), 'logs', 'nanoclaw.log');
@@ -30,12 +30,20 @@ function stripAnsi(s: string): string {
 }
 
 function classifyEvent(msg: string): string {
-  if (msg.includes('Pool message sent') || msg.includes('Assigned and renamed pool bot'))
+  if (
+    msg.includes('Pool message sent') ||
+    msg.includes('Assigned and renamed pool bot')
+  )
     return 'pool';
   if (msg.includes('Spawning container agent')) return 'container';
   if (msg.includes('Agent output')) return 'agent';
-  if (msg.includes('message stored') || msg.includes('message sent')) return 'message';
-  if (msg.includes('Task created') || msg.includes('Task paused') || msg.includes('Task resumed'))
+  if (msg.includes('message stored') || msg.includes('message sent'))
+    return 'message';
+  if (
+    msg.includes('Task created') ||
+    msg.includes('Task paused') ||
+    msg.includes('Task resumed')
+  )
     return 'task';
   if (msg.includes('ERROR') || msg.includes('error')) return 'error';
   if (msg.includes('WARN') || msg.includes('warn')) return 'warn';
@@ -43,7 +51,8 @@ function classifyEvent(msg: string): string {
 }
 
 // Pino-pretty line: [HH:MM:SS.mmm] LEVEL (context/pid): message
-const LINE_RE = /^\[(\d{2}:\d{2}:\d{2}\.\d{3})\].*?(INFO|WARN|ERROR|DEBUG|FATAL).*?(?:\d+\)|\)): (.*)/;
+const LINE_RE =
+  /^\[(\d{2}:\d{2}:\d{2}\.\d{3})\].*?(INFO|WARN|ERROR|DEBUG|FATAL).*?(?:\d+\)|\)): (.*)/;
 
 function parseLine(raw: string): ActivityEvent | null {
   const line = stripAnsi(raw.trim());
@@ -138,7 +147,10 @@ function sse(res: http.ServerResponse) {
 
 // ── Request router ────────────────────────────────────────────────────────────
 export interface DashboardDeps {
-  getPoolStatus: () => { size: number; assignments: { index: number; sender: string; groupFolder: string }[] };
+  getPoolStatus: () => {
+    size: number;
+    assignments: { index: number; sender: string; groupFolder: string }[];
+  };
   getQueueDepth: () => number;
   startedAt: Date;
 }
@@ -159,7 +171,9 @@ function handleRequest(
 
   switch (url) {
     case '/api/status': {
-      const uptimeSecs = Math.floor((Date.now() - deps.startedAt.getTime()) / 1000);
+      const uptimeSecs = Math.floor(
+        (Date.now() - deps.startedAt.getTime()) / 1000,
+      );
       json(res, {
         running: true,
         uptimeSeconds: uptimeSecs,
@@ -181,6 +195,16 @@ function handleRequest(
     case '/api/tasks': {
       try {
         json(res, getAllTasks());
+      } catch (err) {
+        json(res, { error: String(err) }, 500);
+      }
+      break;
+    }
+
+    case '/api/messages': {
+      try {
+        const msgs = getRecentMessages(100).reverse(); // chronological order
+        json(res, msgs);
       } catch (err) {
         json(res, { error: String(err) }, 500);
       }
@@ -216,7 +240,17 @@ function handleRequest(
 
     default: {
       if (req.method === 'GET' && url === '/') {
-        json(res, { status: 'AndyClaw Dashboard API', endpoints: ['/api/status', '/api/groups', '/api/tasks', '/api/chats', '/api/activity', '/api/events'] });
+        json(res, {
+          status: 'AndyClaw Dashboard API',
+          endpoints: [
+            '/api/status',
+            '/api/groups',
+            '/api/tasks',
+            '/api/chats',
+            '/api/activity',
+            '/api/events',
+          ],
+        });
       } else {
         json(res, { error: 'Not found' }, 404);
       }

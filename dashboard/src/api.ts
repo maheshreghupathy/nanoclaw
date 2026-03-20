@@ -61,6 +61,21 @@ export async function fetchTasks(): Promise<ScheduledTask[]> {
   return r.json();
 }
 
+export interface ChatMessage {
+  id: string;
+  chat_jid: string;
+  sender_name: string;
+  content: string;
+  timestamp: string;
+  is_from_me: number;
+  is_bot_message: number;
+}
+
+export async function fetchMessages(): Promise<ChatMessage[]> {
+  const r = await fetch(`${BASE}/messages`);
+  return r.json();
+}
+
 export async function fetchActivity(): Promise<ActivityEvent[]> {
   const r = await fetch(`${BASE}/activity`);
   return r.json();
