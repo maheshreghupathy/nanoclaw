@@ -3,10 +3,12 @@
 ## Client Profile
 
 - **Client:** Mahesh
-- **Tax jurisdiction:** US Federal (35% bracket) + California state income tax (~9.3% at this income level)
-- **Combined marginal rate:** ~44.3% on short-term gains / ordinary income
-- **Long-term capital gains rate:** ~23.8% Federal (20% + 3.8% NIIT) + 13.3% California = ~33.1%
-- **Tax difference short vs long-term:** ~11.2 percentage points — holding positions past 1 year saves significantly
+- **Tax jurisdiction:** US Federal + California
+- **Total combined rate on short-term gains / ordinary income:** 35–37%
+- **Long-term capital gains rate:** ~15–20% Federal LTCG + ~9.3% California = ~24–25% total
+  - Note: California does NOT give preferential rates on long-term gains — the state portion stays the same
+- **Tax saving by holding past 1 year:** ~11–13 percentage points — highly significant on large positions
+- **NIIT (3.8%):** May apply to net investment income if MAGI exceeds $200K single / $250K married — assume applicable
 
 ## Portfolio File
 
@@ -69,10 +71,11 @@ Return: Symbol | Signal (BULLISH/BEARISH/NEUTRAL) | Key Level | Notes
 **Agent 3: Tax Advisor**
 ```
 You are the Tax Advisor for Mahesh's portfolio. Client details:
-- Federal bracket: 35% (short-term gains taxed as ordinary income)
-- California resident: ~9.3% state tax
-- Short-term rate: ~44.3% combined
-- Long-term rate: ~33.1% combined (held >1 year)
+- Total combined rate on short-term gains / ordinary income: 35–37%
+- Total combined rate on long-term gains (held >1 year): ~24–25%
+- California does NOT give preferential rates on long-term gains — the state portion applies either way
+- NIIT (3.8%) assumed applicable on net investment income
+- Tax saving by holding past 1 year: ~11–13 percentage points
 
 For each position in /workspace/group/portfolio.csv:
 1. Calculate days held (if Purchase Date available) — flag positions within 30 days of crossing to long-term
